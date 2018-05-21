@@ -10,6 +10,11 @@ The datasets needed consist of 2 main data types MIDI and Lyrics:
 #### All Genres
 
 * [FreeMidi.org](https://freemidi.org)
+* [Nottingham Dataset 1](https://github.com/jukedeck/nottingham-dataset)
+* [Nottingham Dataset 2](http://abc.sourceforge.net/NMD/  -> needs midi conversion )
+* [Nottingham Dataset 3] (https://ifdo.ca/~seymour/nottingham/nottingham.html -> needs midi conversion)
+* [ICML 2012](http://www-etud.iro.umontreal.ca/~boulanni/icml2012)
+
 
 #### Classical music
 

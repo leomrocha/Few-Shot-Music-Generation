@@ -11,6 +11,9 @@
 * [One-Shot Learning with Memory-Augmented Neural Networks](https://arxiv.org/abs/1605.06065)
 * [A Simple Neural Attentive Meta-Learner](https://openreview.net/forum?id=B1DmUzWAW)
 * [One-Shot Imitation Learning](https://arxiv.org/abs/1703.07326)
+* [Learning to Remember Rare Events](https://arxiv.org/abs/1703.03129)
+* [Matching Networks for One Shot Learning](https://arxiv.org/abs/1606.04080)
+
 
 ## On adaptive language models
 
