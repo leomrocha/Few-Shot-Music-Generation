@@ -13,9 +13,9 @@ from models.base_model import convert_tokens_to_input_and_target
 
 
 class SimpleTCN(nn.Module):
-    def __init__(self, input_size, output_size, num_channels, kernel_size, dropout):
+    def __init__(self, in_size, out_size, num_channels, kernel_size, dropout, future=1):
         super(SimpleTCN, self).__init__()
-        self.tcn = TemporalConvNet(input_size, num_channels, kernel_size, dropout=dropout)
+        self.tcn = TemporalConvNet(in_size, num_channels, kernel_size, dropout=dropout)
         self.linear = nn.Linear(num_channels[-1], output_size)
         # self.relu = nn.ReLu()
         self.sig = nn.Sigmoid()
@@ -30,27 +30,18 @@ class SimpleTCN(nn.Module):
         output = self.softmax(output)
         return output
 
+class TCNBaseline(PyTorchModel):
+    """
+    TCNBaseline
+    """
+    def __init__(self, config):
+        super(TCNBaseline, self).__init__(config)
+        # self._hidden_size = self._config['hidden_size']
+        self._n_layers = self._config['n_layers']
+        self._kernel_size = self._config['kernel_size']
 
-    def evaluate(self, episode):
-        query_set = episode.query
-        X, Y = convert_tokens_to_input_and_target(query_set)
-        self.eval()
-        x = Variable(torch.Tensor(X)).cuda()
-        y = Variable(torch.Tensor(Y)).cuda()
-        output = self(x.unsqueeze(0)).squeeze(0)
-        print(output)
-        loss = -torch.trace(torch.matmul(y, torch.log(output).float().t()) +
-                            torch.matmul((1-y), torch.log(1-output).float().t()))
-        print("loss = ", loss)
-        return loss
-        # total_loss += loss.data[0]
-        # count += output.size(0)
-        # eval_loss = total_loss / count
-        # print("Validation/Test loss: {:.5f}".format(eval_loss))
-        # return eval_loss
-
-class TCN_baseline(PyTorchModel):
-    """docstring for TCN_baseline."""
-    def __init__(self, arg):
-        super(TCN_baseline, self).__init__()
-        self.arg = arg
+        self.model = SimpleTCN(in_size=self._input_size, out_size=self._input_size,
+                               num_channels=self._n_layers, future=self._time_steps,
+                               dropout=0
+                               )
+        self.model.to(self.device)
