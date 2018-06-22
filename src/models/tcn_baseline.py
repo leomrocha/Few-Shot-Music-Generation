@@ -22,7 +22,6 @@ class SimpleTCN(nn.Module):
         self.softmax = nn.Softmax()
 
     def forward(self, x):
-        #output = self.tcn(x)
         output = self.tcn(x.transpose(1, 2)).transpose(1, 2)
         output = self.linear(output)
         # output = self.relu(output)
