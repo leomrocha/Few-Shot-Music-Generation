@@ -48,6 +48,8 @@ class PyTorchModel(BaseModel):
         X = torch.from_numpy(X).to(self.device)
         Y = np.concatenate([Y, Y2])
         Y = torch.from_numpy(Y).to(self.device)
+        X.grad = None
+        Y.grad = None
         # create embedding
         X = self._to_one_hot(X)
         Y = self._to_one_hot(Y)
@@ -61,6 +63,12 @@ class PyTorchModel(BaseModel):
     #     print(type(loss))
         loss.backward()
         optimizer.step()
+        X = Y = X2 = Y2 = None
+        try:
+            torch.cuda.empty_cache()
+        except:
+            print("error emptying memory")
+            pass
         return loss
 
     def eval(self, episode):
@@ -69,6 +77,8 @@ class PyTorchModel(BaseModel):
         X, Y = convert_tokens_to_input_and_target(episode.query, self._start_word)
         X = torch.from_numpy(X).to(self.device)
         Y = torch.from_numpy(Y).to(self.device)
+        X.grad = None
+        Y.grad = None
         # create embedding
         X = self._to_one_hot(X)
         Y = self._to_one_hot(Y)
@@ -117,7 +127,9 @@ def one_hot(x, code_size, device):
     code_size is vector size of the one_hot encoded input value
     Returns a tensor with one more dimension of code_size at the end of the input vector x
     """
+    #TODO make this with sparse vectors instead
+    # print("size = ", code_size ,x.shape)
     out = torch.zeros(x.shape + torch.Size([code_size])).to(device)
     dim = len(x.shape)
     index = x.view(x.shape + torch.Size([1])).long()
-    return out.scatter(dim, index, 1.)
+    return out.scatter_(dim, index, 1.)

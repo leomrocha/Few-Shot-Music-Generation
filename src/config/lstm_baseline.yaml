@@ -1,4 +1,4 @@
-name: 'basic_tf_model'
+name: 'lstm_baseline'
 model_module_name: 'models.lstm_baseline'
 model_class_name: 'LSTMBaseline'
 
@@ -14,5 +14,5 @@ lr: !!float 5e-3
 max_grad_norm: !!int 5
 batch_size: !!int 5
 embedding_size: !!int 250
-n_layers: !!int 2
+n_layers: !!int 1
 hidden_size: !!int 200

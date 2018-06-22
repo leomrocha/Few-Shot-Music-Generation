@@ -113,6 +113,9 @@ def load_sampler_from_config(config):
         config.get('test_proportion', 1)
     )
     root = config['dataset_path']
+    if not os.path.isdir(root):
+        raise RuntimeError('required data directory %s does not exist' % root)
+
     metadata_dir = 'few_shot_metadata_%s_%s' % (config['dataset'], config['max_len'])
     metadata = Metadata(root, metadata_dir)
     if config['dataset'] == 'lyrics':
@@ -120,7 +123,7 @@ def load_sampler_from_config(config):
         parallel = False
     elif config['dataset'] == 'midi':
         loader = MIDILoader(config['max_len'])
-        parallel = True
+        parallel = False
     else:
         raise RuntimeError('unknown dataset "%s"' % config['dataset'])
     dataset = Dataset(

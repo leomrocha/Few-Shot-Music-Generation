@@ -1,3 +1,7 @@
+#
+# file from https://github.com/locuslab/TCN copied here to avoid an entire repo dependency that has no package available
+# license for this file available at original repo
+#
 import torch
 import torch.nn as nn
 from torch.nn.utils import weight_norm

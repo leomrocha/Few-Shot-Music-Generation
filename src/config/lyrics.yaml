@@ -1,4 +1,4 @@
 dataset: 'lyrics'
-dataset_path: '/home/leo/DeepLearning/Few-Shot-Music-Generation/Datasets/lyrics/lyrics_data'
+dataset_path: '../raw-data/lyrics/lyrics_data/'
 splits: ['train', 'val', 'test']
 max_len: 50

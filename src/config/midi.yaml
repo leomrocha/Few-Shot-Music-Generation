@@ -1,4 +1,4 @@
 dataset: 'midi'
-dataset_path: '/home/leo/DeepLearning/Few-Shot-Music-Generation/Datasets/freemidi/freemidi_data'
+dataset_path: '../raw-data/freemidi/freemidi_data/'
 splits: ['train', 'val', 'test']
 max_len: 50

@@ -17,6 +17,7 @@ class LSTMBaseline(TFModel):
 
     def _define_placedholders(self):
         # Add start word that starts every song
+        # Adding start word increases the size of vocabulary by 1
         self._start_word = self._config['input_size']
         self._input_size = self._config['input_size'] + 1
 
@@ -27,7 +28,7 @@ class LSTMBaseline(TFModel):
         self._lr = self._config['lr']
         self._max_grad_norm = self._config['max_grad_norm']
 
-        self._batch_size = tf.placeholder(tf.int32, [])
+        self._batch_size = tf.placeholder(tf.int32, shape=())
         self._seq_length = tf.placeholder(tf.int32, [None])
         self._words = tf.placeholder(
             tf.int32, [None, self._time_steps])
@@ -36,14 +37,13 @@ class LSTMBaseline(TFModel):
 
     def _build_graph(self):
         embedding = tf.get_variable(
-            'embedding', [self._input_size, self._embd_size],
-            initializer=tf.truncated_normal_initializer(1., 1.))
+            'embedding', [self._input_size, self._embd_size])
         inputs = tf.nn.embedding_lookup(embedding, self._words)
         inputs = tf.unstack(inputs, axis=1)
 
         def make_cell():
             return tf.contrib.rnn.BasicLSTMCell(
-                self._hidden_size, forget_bias=0., state_is_tuple=True)
+                self._hidden_size, forget_bias=1., state_is_tuple=True)
 
         self._cell = tf.contrib.rnn.MultiRNNCell(
             [make_cell() for _ in range(self._n_layers)])
@@ -54,14 +54,14 @@ class LSTMBaseline(TFModel):
             sequence_length=self._seq_length)
         self._state = state
 
-        output = tf.reshape(tf.concat(outputs, 0), [-1, self._hidden_size])
-        self._output = output
+        output = tf.concat(outputs, 1)
+        self._output = tf.reshape(output, [-1, self._hidden_size])
 
         softmax_w = tf.get_variable(
             'softmax_w', [self._hidden_size, self._input_size])
         softmax_b = tf.get_variable('softmax_b', [self._input_size])
-        logits = tf.nn.xw_plus_b(output, softmax_w, softmax_b)
         # Reshape logits to be a 3-D tensor for sequence loss
+        logits = tf.nn.xw_plus_b(self._output, softmax_w, softmax_b)
         logits = tf.reshape(
             logits, [self._batch_size, self._time_steps, self._input_size])
         self._logits = logits
@@ -103,21 +103,19 @@ class LSTMBaseline(TFModel):
 
         _, loss = self._sess.run([self._train_op, self._avg_neg_log],
                                  feed_dict=feed_dict)
-
         return loss
 
     def eval(self, episode):
         """Ignore support set and evaluate only on query set."""
-        query_set = episode.query
-        X, Y = convert_tokens_to_input_and_target(query_set, self._start_word)
+        X, Y = convert_tokens_to_input_and_target(
+            episode.query, self._start_word)
 
         feed_dict = {}
         feed_dict[self._words] = X
         feed_dict[self._target] = Y
         feed_dict[self._batch_size] = np.shape(X)[0]
         feed_dict[self._seq_length] = [np.shape(X)[1]] * np.shape(X)[0]
-        avg_neg_log = self._sess.run(self._avg_neg_log,
-                                     feed_dict=feed_dict)
+        avg_neg_log = self._sess.run(self._avg_neg_log, feed_dict=feed_dict)
 
         return avg_neg_log
 

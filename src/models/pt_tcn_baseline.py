@@ -16,7 +16,7 @@ class SimpleTCN(nn.Module):
     def __init__(self, in_size, out_size, num_channels, kernel_size, dropout, future=1):
         super(SimpleTCN, self).__init__()
         self.tcn = TemporalConvNet(in_size, num_channels, kernel_size, dropout=dropout)
-        self.linear = nn.Linear(num_channels[-1], output_size)
+        self.linear = nn.Linear(num_channels[-1], out_size)
         # self.relu = nn.ReLu()
         self.sig = nn.Sigmoid()
         self.softmax = nn.Softmax()
@@ -37,10 +37,13 @@ class TCNBaseline(PyTorchModel):
         super(TCNBaseline, self).__init__(config)
         # self._hidden_size = self._config['hidden_size']
         self._n_layers = self._config['n_layers']
+        #self._start_word = self._config['input_size']
         self._kernel_size = self._config['kernel_size']
 
+        self._num_channels = [self._start_word] * self._n_layers
         self.model = SimpleTCN(in_size=self._input_size, out_size=self._input_size,
-                               num_channels=self._n_layers, future=self._time_steps,
+                               num_channels=self._num_channels, future=self._time_steps,
+                               kernel_size=self._kernel_size,
                                dropout=0
                                )
         self.model.to(self.device)

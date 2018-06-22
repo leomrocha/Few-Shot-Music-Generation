@@ -108,7 +108,7 @@ class TFModel(BaseModel):
         self._saver.save(self._sess, self._get_checkpt_prefix(checkpt_path),
                          global_step=self._global_step)
 
-    def _recover(self, checkpt_path, trainable_vars):
+    def _recover(self, checkpt_path, only_load_trainable_vars):
         latest_checkpt = tf.train.latest_checkpoint(
             os.path.join(checkpt_path, self.name)
         )
@@ -116,7 +116,7 @@ class TFModel(BaseModel):
             return False
 
         print('recovering %s from %s' % (self.name, latest_checkpt))
-        optimistic_restore(self._sess, latest_checkpt, trainable_vars)
+        optimistic_restore(self._sess, latest_checkpt, only_load_trainable_vars)
         return True
 
     def recover_or_init(self, checkpt_path, only_load_trainable_vars=False):

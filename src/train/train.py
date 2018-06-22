@@ -40,6 +40,8 @@ parser.add_argument('--task', dest='task', default='')
 parser.add_argument('--checkpt_dir', dest='checkpt_dir', default='')
 parser.add_argument('--init_dir', dest='init_dir', default='')
 args = parser.parse_args()
+print('Args:')
+print(PP.pformat(vars(args)))
 
 config = yaml.load(open(args.data, 'r'))
 config.update(yaml.load(open(args.task, 'r')))
@@ -55,6 +57,9 @@ for split in config['splits']:
     episode_sampler[split] = load_sampler_from_config(config)
 
 config['input_size'] = episode_sampler['train'].get_num_unique_words()
+if not config['input_size'] > 0:
+    raise RuntimeError(
+        'error reading data: %d unique tokens processed' % config['input_size'])
 print('Num unique words: %d' % config['input_size'])
 
 n_train = config['n_train']
@@ -71,7 +76,6 @@ model.recover_or_init(args.init_dir)
 # Train model and evaluate
 avg_nll = evaluate(model, episode_sampler['val'], n_val)
 print("Iter: %d, val-nll: %.3e" % (0, avg_nll))
-
 
 avg_loss = 0.
 for i in range(1, n_train + 1):
@@ -90,6 +94,9 @@ for i in range(1, n_train + 1):
         print("Iter: %d, loss: %.3e" % (i, avg_loss / print_every_n))
         avg_loss = 0.
 
+# Evaluate model after training on training, validation, and test sets
+avg_nll = evaluate(model, episode_sampler['train'], n_val)
+print("Train Avg NLL: %.3e" % (avg_nll))
 avg_nll = evaluate(model, episode_sampler['val'], n_val)
 print("Validation Avg NLL: %.3e" % (avg_nll))
 avg_nll = evaluate(model, episode_sampler['test'], n_val)
