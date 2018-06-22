@@ -1,14 +1,21 @@
 import os
+import torch
 from torch import nn
 import pprint
-from models.base_model import BaseModel
+from models.base_model import BaseModel, convert_tokens_to_input_and_target
 import numpy as np
 
 PP = pprint.PrettyPrinter(depth=6)
 
+class OneHot(nn.Module):
+    # TODO module to use the embedding it directly in the network graph
+    # this should make it more time-efficient than scatter_ implementation
+    pass
 
 class PyTorchModel(BaseModel):
-    """docstring for PyTorchModel.BaseModel"""
+    """
+    docstring for PyTorchModel.BaseModel
+    """
     def __init__(self, config):
         super(PyTorchModel,self).__init__(config)
         self._start_word = self._config['input_size']
@@ -18,12 +25,13 @@ class PyTorchModel(BaseModel):
         self._embd_size = self._config['embedding_size']
         self._lr = self._config['lr']
         self._max_grad_norm = self._config['max_grad_norm']
-
+        self.device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+        # TODO change loss criterion
         self.criterion = nn.MSELoss() #this loss does not have backward
         #criterion = nn.CrossEntropyLoss() # FIXME this loss does not work with the current setup
 
     def _to_one_hot(self, data):
-        pass# TODO
+        return one_hot(data, self._input_size, self.device)
 
     def train(self, episode):
         """Train model on episode.
@@ -57,16 +65,16 @@ class PyTorchModel(BaseModel):
 
     def eval(self, episode):
         """Ignore support set and evaluate only on query set."""
-        print(episode.query.shape)
+        # print(episode.query.shape)
         X, Y = convert_tokens_to_input_and_target(episode.query, self._start_word)
         X = torch.from_numpy(X).to(self.device)
         Y = torch.from_numpy(Y).to(self.device)
         # create embedding
         X = self._to_one_hot(X)
         Y = self._to_one_hot(Y)
-        print(X.shape, Y.shape)
+        # print(X.shape, Y.shape)
         out = self.model(X)
-        print(out.shape)
+        # print(out.shape)
         loss = self.criterion(out, Y)
         return loss
 
@@ -103,32 +111,13 @@ class PyTorchModel(BaseModel):
         #raise NotImplementedError()
 
 
-def convert_tokens_to_input_and_target(token_array, start_word=None):
-    """Convert token_array to input and target to use for model for
-    sequence generation.
-
-    If start_word is given, add to start of each sequence of tokens.
-    Input is token_array without last item; Target is token_array without first item.
-
-    Arguments:
-        token_array (numpy int array): tokens array of size [B,S,N] where
-            B is batch_size, S is number of songs, N is size of the song
-        start_word (int): token to use for start word
-
-    Returns:
-        arrays of dimensions:
-        [sec_len, batch_size, input_size]
+def one_hot(x, code_size, device):
     """
-    print("token_array.shape = ", token_array.shape)
-    X = np.transpose(token_array, (1,0,2))
-
-    if start_word is None:
-        Y = np.copy(X[:, :, 1:])
-        X_new = X[:, :, :-1]
-    else:
-        Y = np.copy(X)
-        start_word_column = np.full(
-            shape=[np.shape(X)[0],np.shape(X)[1], 1], fill_value=start_word)
-        X_new = np.concatenate([start_word_column, X[:, :, :-1]], axis=2)
-
-    return X_new, Y
+    Converts input tensor x to One Hot encoding
+    code_size is vector size of the one_hot encoded input value
+    Returns a tensor with one more dimension of code_size at the end of the input vector x
+    """
+    out = torch.zeros(x.shape + torch.Size([code_size])).to(device)
+    dim = len(x.shape)
+    index = x.view(x.shape + torch.Size([1])).long()
+    return out.scatter(dim, index, 1.)

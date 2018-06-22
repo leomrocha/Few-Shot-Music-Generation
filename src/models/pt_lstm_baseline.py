@@ -8,8 +8,6 @@ from torch.nn import Softmax
 import torch.nn.functional as F
 import torch.optim as optim
 
-# from models.pt_model import convert_tokens_to_input_and_target
-from models.base_model import convert_tokens_to_input_and_target
 from models.pt_model import PyTorchModel
 
 
