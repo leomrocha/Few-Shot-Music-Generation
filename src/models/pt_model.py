@@ -30,11 +30,9 @@ class PyTorchModel(BaseModel):
         self.criterion = nn.MSELoss() #this loss does not have backward
         #criterion = nn.CrossEntropyLoss() # FIXME this loss does not work with the current setup
 
-    def _to_one_hot(self, data):
-        return one_hot(data, self._input_size, self.device)
-
     def _encode(self, data):
-        return self.encoder(data)
+        return one_hot(data, self._input_size, self.device)
+        #return self.encoder(data)
 
     def train(self, episode):
         """Train model on episode.
@@ -42,6 +40,7 @@ class PyTorchModel(BaseModel):
         Args:
             episode: Episode object containing support and query set.
         """
+        # print("training PyTorch Model")
         # format input data
         X, Y = convert_tokens_to_input_and_target(
             episode.support, self._start_word)
@@ -51,23 +50,27 @@ class PyTorchModel(BaseModel):
         X = torch.from_numpy(X).to(self.device)
         Y = np.concatenate([Y, Y2])
         Y = torch.from_numpy(Y).to(self.device)
-        X.grad = None
-        Y.grad = None
+        # print(" 3 grad ? ", X.requires_grad, Y.requires_grad)
+        # X.grad = None
+        # Y.grad = None
+        # print("4 grad ? ", X.requires_grad, Y.requires_grad)
         # create embedding
         X = self._encode(X)
         Y = self._encode(Y)
+        # print("5 grad ? ", X.requires_grad, Y.requires_grad)
         #train
         optimizer = torch.optim.Adam(self.model.parameters(), lr=self._lr)
-        self.model.hidden = self.model.init_hidden(self.device) #reset state to avoid interference between different elements
+        self.model.hidden = self.model.init_hidden() #reset state to avoid interference between different episodes
         self.model.zero_grad()
-        out = self.model(X, future=self._time_steps)
+        # out = self.model(X, future=self._time_steps)
+        out = self.model(X)
     #     print(out.shape)
         loss = self.criterion(out, Y)
     #     print(type(loss))
         loss.backward()
         optimizer.step()
-        X = Y = X2 = Y2 = None
         try:
+            X = Y = X2 = Y2 = None
             torch.cuda.empty_cache()
         except:
             print("error emptying memory")
@@ -76,19 +79,33 @@ class PyTorchModel(BaseModel):
 
     def eval(self, episode):
         """Ignore support set and evaluate only on query set."""
-        # print(episode.query.shape)
+        # print("episode query shape = ",episode.query.shape)
         X, Y = convert_tokens_to_input_and_target(episode.query, self._start_word)
         X = torch.from_numpy(X).to(self.device)
         Y = torch.from_numpy(Y).to(self.device)
-        X.grad = None
-        Y.grad = None
+        # print("1- grad ? ", X.requires_grad, Y.requires_grad)
+        # X.grad = None
+        # Y.grad = None
+        # print("2- grad ? ", X.requires_grad, Y.requires_grad)
         # create embedding
         X = self._encode(X)
         Y = self._encode(Y)
-        # print(X.shape, Y.shape)
+        # print("eval 3- grad ? ", X.requires_grad, Y.requires_grad)
+        #print("X,Y shapes = ",X.shape, Y.shape)
+
         out = self.model(X)
-        # print(out.shape)
+        # print("eval 4- grad ? ", out.requires_grad) # ->grad =True
+        #print("out.shape = ", out.shape)
         loss = self.criterion(out, Y)
+        # print("eval 5- grad ? ", loss.requires_grad) # ->grad =True
+        try:
+            X = Y = out = None
+            torch.cuda.empty_cache()
+        except:
+            print("error emptying memory")
+            pass
+        loss = loss.data.cpu().numpy()
+        # print("Evaluation loss = ", loss)
         return loss
 
     def sample(self, support_set, num):
@@ -110,7 +127,7 @@ class PyTorchModel(BaseModel):
             checkpt_path (string): path where to save parameters.
         """
         pass
-        raise NotImplementedError()
+        #raise NotImplementedError()
 
     def recover_or_init(self, init_path):
         """Recover or initialize model based on init_path.
@@ -133,6 +150,7 @@ def one_hot(x, code_size, device):
     #TODO make this with sparse vectors instead
     # print("size = ", code_size ,x.shape)
     out = torch.zeros(x.shape + torch.Size([code_size])).to(device)
+    # print("one_hot grad ? ", out.requires_grad)
     dim = len(x.shape)
     index = x.view(x.shape + torch.Size([1])).long()
     return out.scatter_(dim, index, 1.)

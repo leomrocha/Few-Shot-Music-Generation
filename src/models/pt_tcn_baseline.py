@@ -21,12 +21,17 @@ class SimpleTCN(nn.Module):
         self.sig = nn.Sigmoid()
         self.softmax = nn.Softmax()
 
+    def init_hidden(self):
+        self.tcn.init_weights()
+
     def forward(self, x):
-        output = self.tcn(x.transpose(1, 2)).transpose(1, 2)
+        output = self.tcn(x.transpose_(1, 2)).transpose_(1, 2)
+        #print("tcn out shape = ",output.shape)
         output = self.linear(output)
         # output = self.relu(output)
         output = self.sig(output)
         output = self.softmax(output)
+        #print("out shape = ", output.shape)
         return output
 
 class TCNBaseline(PyTorchModel):
@@ -40,7 +45,7 @@ class TCNBaseline(PyTorchModel):
         #self._start_word = self._config['input_size']
         self._kernel_size = self._config['kernel_size']
 
-        self._num_channels = [self._start_word, self._config["embedding_size"], self._config["embedding_size"]]
+        self._num_channels = [self._input_size, self._config["embedding_size"], self._config["embedding_size"]]
         #self._num_channels = self._config["embedding_size"]
         self.model = SimpleTCN(in_size=self._input_size, out_size=self._input_size,
                                num_channels=self._num_channels, future=self._time_steps,
