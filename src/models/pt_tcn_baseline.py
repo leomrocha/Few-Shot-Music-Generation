@@ -40,10 +40,12 @@ class TCNBaseline(PyTorchModel):
         #self._start_word = self._config['input_size']
         self._kernel_size = self._config['kernel_size']
 
-        self._num_channels = [self._start_word] * self._n_layers
+        self._num_channels = [self._start_word, self._config["embedding_size"], self._config["embedding_size"]]
+        #self._num_channels = self._config["embedding_size"]
         self.model = SimpleTCN(in_size=self._input_size, out_size=self._input_size,
                                num_channels=self._num_channels, future=self._time_steps,
                                kernel_size=self._kernel_size,
                                dropout=0
                                )
+
         self.model.to(self.device)

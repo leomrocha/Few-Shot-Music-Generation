@@ -33,6 +33,9 @@ class PyTorchModel(BaseModel):
     def _to_one_hot(self, data):
         return one_hot(data, self._input_size, self.device)
 
+    def _encode(self, data):
+        return self.encoder(data)
+
     def train(self, episode):
         """Train model on episode.
 
@@ -51,8 +54,8 @@ class PyTorchModel(BaseModel):
         X.grad = None
         Y.grad = None
         # create embedding
-        X = self._to_one_hot(X)
-        Y = self._to_one_hot(Y)
+        X = self._encode(X)
+        Y = self._encode(Y)
         #train
         optimizer = torch.optim.Adam(self.model.parameters(), lr=self._lr)
         self.model.hidden = self.model.init_hidden(self.device) #reset state to avoid interference between different elements
@@ -80,8 +83,8 @@ class PyTorchModel(BaseModel):
         X.grad = None
         Y.grad = None
         # create embedding
-        X = self._to_one_hot(X)
-        Y = self._to_one_hot(Y)
+        X = self._encode(X)
+        Y = self._encode(Y)
         # print(X.shape, Y.shape)
         out = self.model(X)
         # print(out.shape)
