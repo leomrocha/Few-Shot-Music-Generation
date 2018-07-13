@@ -27,8 +27,9 @@ class PyTorchModel(BaseModel):
         self._max_grad_norm = self._config['max_grad_norm']
         self.device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
         # TODO change loss criterion
-        self.criterion = nn.MSELoss() #this loss does not have backward
-        #criterion = nn.CrossEntropyLoss() # FIXME this loss does not work with the current setup
+        #self.criterion = nn.MSELoss() #this loss does not have backward
+        #self.criterion = nn.CrossEntropyLoss() # FIXME this loss does not work with the current setup
+        self.criterion = nn.BCELoss() # FIXME this loss does not work with the current setup
 
     def _encode(self, data):
         return one_hot(data, self._input_size, self.device)
@@ -64,9 +65,9 @@ class PyTorchModel(BaseModel):
         self.model.zero_grad()
         # out = self.model(X, future=self._time_steps)
         out = self.model(X)
-    #     print(out.shape)
+        # print(out.shape)
         loss = self.criterion(out, Y)
-    #     print(type(loss))
+        # print(type(loss))
         loss.backward()
         optimizer.step()
         try:
@@ -96,7 +97,8 @@ class PyTorchModel(BaseModel):
         out = self.model(X)
         # print("eval 4- grad ? ", out.requires_grad) # ->grad =True
         #print("out.shape = ", out.shape)
-        loss = self.criterion(out, Y)
+        # print("tensor types = ", type(out), type(Y))
+        loss = self.criterion(out.view(-1, out.shape[-1]), Y.view(-1, Y.shape[-1]))
         # print("eval 5- grad ? ", loss.requires_grad) # ->grad =True
         try:
             X = Y = out = None
