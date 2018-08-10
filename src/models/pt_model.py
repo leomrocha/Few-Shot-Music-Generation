@@ -7,10 +7,6 @@ import numpy as np
 
 PP = pprint.PrettyPrinter(depth=6)
 
-class OneHot(nn.Module):
-    # TODO module to use the embedding it directly in the network graph
-    # this should make it more time-efficient than scatter_ implementation
-    pass
 
 class PyTorchModel(BaseModel):
     """
@@ -29,11 +25,11 @@ class PyTorchModel(BaseModel):
         # TODO change loss criterion
         #self.criterion = nn.MSELoss() #this loss does not have backward
         #self.criterion = nn.CrossEntropyLoss() # FIXME this loss does not work with the current setup
-        self.criterion = nn.BCELoss() # FIXME this loss does not work with the current setup
-
-    def _encode(self, data):
-        return one_hot(data, self._input_size, self.device)
-        #return self.encoder(data)
+        self.criterion = nn.BCELoss()
+    #
+    # def _encode(self, data):
+    #     return one_hot(data, self._input_size, self.device)
+    #     #return self.encoder(data)
 
     def train(self, episode):
         """Train model on episode.
@@ -56,8 +52,8 @@ class PyTorchModel(BaseModel):
         # Y.grad = None
         # print("4 grad ? ", X.requires_grad, Y.requires_grad)
         # create embedding
-        X = self._encode(X)
-        Y = self._encode(Y)
+        # X = self._encode(X)
+        # Y = self._encode(Y)
         # print("5 grad ? ", X.requires_grad, Y.requires_grad)
         #train
         optimizer = torch.optim.Adam(self.model.parameters(), lr=self._lr)
@@ -89,15 +85,16 @@ class PyTorchModel(BaseModel):
         # Y.grad = None
         # print("2- grad ? ", X.requires_grad, Y.requires_grad)
         # create embedding
-        X = self._encode(X)
-        Y = self._encode(Y)
+        # X = self._encode(X)
+        # Y = self._encode(Y)
         # print("eval 3- grad ? ", X.requires_grad, Y.requires_grad)
-        #print("X,Y shapes = ",X.shape, Y.shape)
+        print("X,Y shapes = ",X.shape, Y.shape)
 
         out = self.model(X)
         # print("eval 4- grad ? ", out.requires_grad) # ->grad =True
-        #print("out.shape = ", out.shape)
-        # print("tensor types = ", type(out), type(Y))
+        print("out.shape = ", out.shape)
+        print("tensor types = ", type(out), type(Y))
+        # FIXME shape here is wrong -> is the issue with the shape of the embedding ...
         loss = self.criterion(out.view(-1, out.shape[-1]), Y.view(-1, Y.shape[-1]))
         # print("eval 5- grad ? ", loss.requires_grad) # ->grad =True
         try:

@@ -10,9 +10,9 @@ from models.pt_model import PyTorchModel
 from models.base_model import convert_tokens_to_input_and_target
 
 
-class PlasticFC(nn.Module):
+class TCNPlasticFC(nn.Module):
     def __init__(self, in_size, out_size, num_channels, kernel_size, dropout, future=1):
-        super(PlasticFC, self).__init__()
+        super(TCNPlasticFC, self).__init__()
         self.tcn = TemporalConvNet(in_size, num_channels, kernel_size, dropout=dropout)
         self.linear = nn.Linear(num_channels[-1], out_size)
         # self.relu = nn.ReLu()
@@ -33,12 +33,12 @@ class PlasticFC(nn.Module):
         return output
 
 
-class PlasticFCBaseline(PyTorchModel):
+class TCNPlasticFCBaseline(PyTorchModel):
     """
     PlasticFCBaseline
     """
     def __init__(self, config):
-        super(PlasticFCBaseline, self).__init__(config)
+        super(TCNPlasticFCBaseline, self).__init__(config)
         # self._hidden_size = self._config['hidden_size']
         self._n_layers = self._config['n_layers']
         #self._start_word = self._config['input_size']
