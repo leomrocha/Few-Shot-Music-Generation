@@ -1,4 +1,3 @@
-
 import numpy as np
 
 import torch
@@ -7,14 +6,13 @@ from torch.autograd import Variable
 import torch.optim as optim
 import torch.nn.functional as F
 
-from models.pt_tcn import TemporalConvNet
 from models.pt_model import PyTorchModel
 from models.base_model import convert_tokens_to_input_and_target
 
 
-class SimpleTCN(nn.Module):
+class PlasticFC(nn.Module):
     def __init__(self, in_size, out_size, num_channels, kernel_size, dropout, future=1):
-        super(SimpleTCN, self).__init__()
+        super(PlasticFC, self).__init__()
         self.tcn = TemporalConvNet(in_size, num_channels, kernel_size, dropout=dropout)
         self.linear = nn.Linear(num_channels[-1], out_size)
         # self.relu = nn.ReLu()
@@ -35,12 +33,12 @@ class SimpleTCN(nn.Module):
         return output
 
 
-class TCNBaseline(PyTorchModel):
+class PlasticFCBaseline(PyTorchModel):
     """
-    TCNBaseline
+    PlasticFCBaseline
     """
     def __init__(self, config):
-        super(TCNBaseline, self).__init__(config)
+        super(PlasticFCBaseline, self).__init__(config)
         # self._hidden_size = self._config['hidden_size']
         self._n_layers = self._config['n_layers']
         #self._start_word = self._config['input_size']
@@ -48,7 +46,7 @@ class TCNBaseline(PyTorchModel):
 
         self._num_channels = [self._input_size, self._config["embedding_size"], self._config["embedding_size"]]
         #self._num_channels = self._config["embedding_size"]
-        self.model = SimpleTCN(in_size=self._input_size, out_size=self._input_size,
+        self.model = PlasticFC(in_size=self._input_size, out_size=self._input_size,
                                num_channels=self._num_channels, future=self._time_steps,
                                kernel_size=self._kernel_size,
                                dropout=0

@@ -190,7 +190,7 @@ class LSTMPlasticFC(TFModel):
         """Ignore support set and evaluate only on query set."""
         X, Y = convert_tokens_to_input_and_target(
             episode.query, self._start_word)
-        print("eval shapes X,Y = ", X.shape, Y.shape)
+        # print("eval shapes X,Y = ", X.shape, Y.shape)
         # self._Xshape = X.shape
 
         feed_dict = {}
