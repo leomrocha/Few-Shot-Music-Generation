@@ -26,7 +26,7 @@ class SimpleRecurrentSequence(nn.Module):
         self.rnn = self.CELL_TYPE(input_size=in_size, hidden_size=hid_size, num_layers=layers, bias=bias,
                                   dropout=dropout, bidirectional=bidirectional, batch_first=batch_first)
         self.linear = nn.Linear(hid_size, out_size)
-        #self.hidden = self.init_hidden()  #TODO fix the issue with cuda access here
+        # self.hidden = self.init_hidden()  # TODO fix the issue with cuda access here
         self.hidden = None
 
     def forward(self, data, future=0):

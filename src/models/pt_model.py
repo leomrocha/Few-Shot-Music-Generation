@@ -23,13 +23,13 @@ class PyTorchModel(BaseModel):
         self._max_grad_norm = self._config['max_grad_norm']
         self.device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
         # TODO change loss criterion
-        #self.criterion = nn.MSELoss() #this loss does not have backward
-        #self.criterion = nn.CrossEntropyLoss() # FIXME this loss does not work with the current setup
+        # self.criterion = nn.MSELoss() #this loss does not have backward
+        # self.criterion = nn.CrossEntropyLoss() # FIXME this loss does not work with the current setup
         self.criterion = nn.BCELoss()
-    #
-    # def _encode(self, data):
-    #     return one_hot(data, self._input_size, self.device)
-    #     #return self.encoder(data)
+
+    def _encode(self, data):
+        return one_hot(data, self._input_size, self.device)
+        # return self.encoder(data)
 
     def train(self, episode):
         """Train model on episode.
@@ -53,11 +53,11 @@ class PyTorchModel(BaseModel):
         # print("4 grad ? ", X.requires_grad, Y.requires_grad)
         # create embedding
         # X = self._encode(X)
-        # Y = self._encode(Y)
+        Y = self._encode(Y)
         # print("5 grad ? ", X.requires_grad, Y.requires_grad)
-        #train
+        # train
         optimizer = torch.optim.Adam(self.model.parameters(), lr=self._lr)
-        self.model.hidden = self.model.init_hidden() #reset state to avoid interference between different episodes
+        self.model.hidden = self.model.init_hidden()  # reset state to avoid interference between different episodes
         self.model.zero_grad()
         # out = self.model(X, future=self._time_steps)
         out = self.model(X)
@@ -86,14 +86,14 @@ class PyTorchModel(BaseModel):
         # print("2- grad ? ", X.requires_grad, Y.requires_grad)
         # create embedding
         # X = self._encode(X)
-        # Y = self._encode(Y)
+        Y = self._encode(Y)
         # print("eval 3- grad ? ", X.requires_grad, Y.requires_grad)
-        print("X,Y shapes = ",X.shape, Y.shape)
+        # print("X,Y shapes = ", X.shape, Y.shape)
 
         out = self.model(X)
         # print("eval 4- grad ? ", out.requires_grad) # ->grad =True
-        print("out.shape = ", out.shape)
-        print("tensor types = ", type(out), type(Y))
+        # print("out.shape = ", out.shape)
+        # print("tensor types = ", type(out), type(Y))
         # FIXME shape here is wrong -> is the issue with the shape of the embedding ...
         loss = self.criterion(out.view(-1, out.shape[-1]), Y.view(-1, Y.shape[-1]))
         # print("eval 5- grad ? ", loss.requires_grad) # ->grad =True
@@ -146,7 +146,7 @@ def one_hot(x, code_size, device):
     code_size is vector size of the one_hot encoded input value
     Returns a tensor with one more dimension of code_size at the end of the input vector x
     """
-    #TODO make this with sparse vectors instead
+    # TODO make this with sparse vectors instead
     # print("size = ", code_size ,x.shape)
     out = torch.zeros(x.shape + torch.Size([code_size])).to(device)
     # print("one_hot grad ? ", out.requires_grad)

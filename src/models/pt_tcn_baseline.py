@@ -26,11 +26,11 @@ class SimpleTCN(nn.Module):
         self.tcn.init_weights()
 
     def forward(self, x):
-        print("tcn x shape = ",x.shape)
+        # print("tcn x shape = ",x.shape)
         output = self.embeddings(x)
-        print("tcn out shape = ",output.shape)
+        # print("tcn out shape = ",output.shape)
         output = self.tcn(output.transpose_(1, 2)).transpose_(1, 2)
-        print("tcn out shape = ",output.shape)
+        # print("tcn out shape = ",output.shape)
         output = self.linear(output)
         # output = self.relu(output)
         output = self.sig(output)
