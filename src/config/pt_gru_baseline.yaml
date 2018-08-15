@@ -17,4 +17,4 @@ embedding_size: !!int 250
 n_layers: !!int 2
 hidden_size: !!int 200
 
-cell_type: 'LSTM'
+cell_type: 'GRU'

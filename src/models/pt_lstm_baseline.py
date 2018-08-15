@@ -33,7 +33,7 @@ class SimpleRecurrentSequence(nn.Module):
         self.bidirectional = bidirectional
         self.CELL_TYPE = SimpleRecurrentSequence.module_dict[cell]
         self.embeddings = nn.Embedding(in_size, embd_size)
-        self.rnn = self.CELL_TYPE(input_size=in_size, hidden_size=hid_size, num_layers=layers, bias=bias,
+        self.rnn = self.CELL_TYPE(input_size=embd_size, hidden_size=hid_size, num_layers=layers, bias=bias,
                                   dropout=dropout, bidirectional=bidirectional, batch_first=batch_first)
         self.linear = nn.Linear(hid_size, out_size)
         self.softmax = Softmax()  # (dim=self.out_size)
@@ -42,13 +42,13 @@ class SimpleRecurrentSequence(nn.Module):
 
     def forward(self, data, future=0):
         outputs = []
-        print("inshape: ", data.shape)
+        # print("inshape: ", data.shape)
         embd_data = self.embeddings(data)
-        print("embd_data: ", embd_data.shape)
+        # print("embd_data: ", embd_data.shape)
         # print(self.hidden)
         # TODO FIXME here there is a size mismatch RuntimeError: input must have 3 dimensions, got 2
-        out, self.hidden = self.rnn(embd_data, self.hidden) if self.hidden is not None else self.rnn(data)
-        print("shapes: ", out.shape, self.hidden[0].shape)
+        out, self.hidden = self.rnn(embd_data, self.hidden) if self.hidden is not None else self.rnn(embd_data)
+        # print("shapes: ", out.shape, self.hidden[0].shape)
         out = self.linear(out)
         out = self.softmax(out)
         outputs += [out]
@@ -80,7 +80,7 @@ class RNNBaseline(PyTorchModel):
         super(RNNBaseline, self).__init__(config)
         self._hidden_size = self._config['hidden_size']
         self._n_layers = self._config['n_layers']
-        self._cell_type = "LSTM"  # TODO add this from configuration
+        self._cell_type = self._config['cell_type']
 
         self.model = SimpleRecurrentSequence(in_size=self._input_size, embd_size=self._embd_size,
                                             hid_size=self._hidden_size,

@@ -1,15 +1,8 @@
 
-import numpy as np
-
-import torch
 from torch import nn
-from torch.autograd import Variable
-import torch.optim as optim
-import torch.nn.functional as F
 
 from models.pt_tcn import TemporalConvNet
 from models.pt_model import PyTorchModel
-from models.base_model import convert_tokens_to_input_and_target
 
 
 class SimpleTCN(nn.Module):

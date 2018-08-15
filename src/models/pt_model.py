@@ -13,7 +13,7 @@ class PyTorchModel(BaseModel):
     docstring for PyTorchModel.BaseModel
     """
     def __init__(self, config):
-        super(PyTorchModel,self).__init__(config)
+        super(PyTorchModel, self).__init__(config)
         self._start_word = self._config['input_size']
         self._input_size = self._config['input_size'] + 1
 
