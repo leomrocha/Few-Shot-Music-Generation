@@ -52,7 +52,7 @@ class SimpleRecurrentSequence(nn.Module):
         out = self.linear(out)
         out = self.softmax(out)
         outputs += [out]
-        output = out  # .view(-1,999,1)
+        # output = out  # .view(-1,999,1)
         if future > 0:
             # I want to avoid that it actually changes the current real state
             # for the next step to avoid future knowledge during training

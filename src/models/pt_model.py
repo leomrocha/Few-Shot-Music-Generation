@@ -67,7 +67,8 @@ class PyTorchModel(BaseModel):
         loss.backward()
         optimizer.step()
         try:
-            X = Y = X2 = Y2 = None
+            del(X); del(Y); del(X2); del(Y2)
+            # X = Y = X2 = Y2 = None
             torch.cuda.empty_cache()
         except:
             print("error emptying memory")
@@ -98,7 +99,8 @@ class PyTorchModel(BaseModel):
         loss = self.criterion(out.view(-1, out.shape[-1]), Y.view(-1, Y.shape[-1]))
         # print("eval 5- grad ? ", loss.requires_grad) # ->grad =True
         try:
-            X = Y = out = None
+            # X = Y = out = None
+            del(X); del(Y); del(out)
             torch.cuda.empty_cache()
         except:
             print("error emptying memory")
