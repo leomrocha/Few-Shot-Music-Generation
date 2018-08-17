@@ -11,7 +11,7 @@ class PlasticLayer(nn.Module):
     This class is mostly based on the differentiable-plasticity work from Uber here:
     https://github.com/uber-research/differentiable-plasticity hence the same license as that repo is applied to this file
     """
-    def __init__(self, in_size, out_size, plasticity="hebbian"):
+    def __init__(self, in_size, out_size, plasticity="hebbian", device="cpu"):
         """
         :param embedding_size: size of the layer in neurons
         :param plasticity: [nonplastic|hebbian|oja]
@@ -24,15 +24,16 @@ class PlasticLayer(nn.Module):
         self.out_size = out_size
         self.embedding_size = embedding_size = in_size
         self.plasticity = plasticity
+        self.device = device
         # Notice that the vectors are row vectors, and the matrices are transposed wrt the usual order,
         #  following apparent pytorch conventions
         # Each *column* of w targets a single output neuron
         # The matrix of fixed (baseline) weights
-        self.w = tensor(.01 * torch.randn(embedding_size, embedding_size), requires_grad=True)
+        self.w = tensor(.01 * torch.randn(embedding_size, embedding_size), requires_grad=True).to(device)
         # The matrix of plasticity coefficients
-        self.alpha = tensor(.01 * torch.randn(embedding_size, embedding_size), requires_grad=True)
+        self.alpha = tensor(.01 * torch.randn(embedding_size, embedding_size), requires_grad=True).to(device)
         # The eta coefficient is learned
-        self.eta = tensor(.01 * torch.ones(1), requires_grad=True)
+        self.eta = tensor(.01 * torch.ones(1), requires_grad=True).to(device)
         if self.plasticity == 'nonplastic':
             self.zero_diag_alpha()  # No plastic autapses
         elif self.plasticity == "hebbian":
@@ -62,18 +63,18 @@ class PlasticLayer(nn.Module):
         return yout, hebb
 
     def initial_zero_state(self):
-        return tensor(torch.zeros(1, self.embedding_size))
+        return tensor(torch.zeros(1, self.embedding_size)).to(self.device)
 
     def initial_zero_hebb(self):
-        return tensor(torch.zeros(self.embedding_size, self.embedding_size))
+        return tensor(torch.zeros(self.embedding_size, self.embedding_size)).to(self.device)
 
     def zero_diag_alpha(self):
         # Zero out the diagonal of the matrix of alpha coefficients: no plastic autapses
-        self.alpha.data -= torch.diag(torch.diag(self.alpha.data))
+        self.alpha.data -= torch.diag(torch.diag(self.alpha.data)).to(self.device)
 
 
 class PlasticFCNetwork(nn.Module):
-    def __init__(self, in_size, out_size, time_steps, num_channels, plasticity="hebbian"):
+    def __init__(self, in_size, out_size, time_steps, num_channels, plasticity="hebbian", device="cpu"):
         """
         :param embedding_size: size of the layer in neurons
         :param plasticity: [nonplastic|hebbian|oja]
@@ -85,31 +86,62 @@ class PlasticFCNetwork(nn.Module):
         self.time_steps = time_steps
         self.num_channels = num_channels
         self.plasticity = plasticity
+        self.device = device
+
         self.hebbian_layers = []
         self.embeddings = nn.Embedding(in_size, num_channels[0])
         for i in range(1, len(num_channels)):
             in_channels = num_channels[i-1]
             out_channels = num_channels[i]
-            self.hebbian_layers.append(PlasticLayer(in_channels, out_channels, plasticity))
+            self.hebbian_layers.append(PlasticLayer(in_channels, out_channels, plasticity, device))
         # self.relu = nn.ReLu()
         self.sig = nn.Sigmoid()
         self.softmax = nn.Softmax()
 
         #internal memory state
-        self._hebb = []
+        self._hebb = [hb.initial_zero_hebb() for hb in self.hebbian_layers]
         self._y = []
+        self._x = []
 
     def init_weights(self):
-        for hl in self.hebbian_layers:
-            self._hebb.append(hl.initial_zero_hebb())
+        self._hebb = [hb.initial_zero_hebb() for hb in self.hebbian_layers]
 
     def forward(self, x):
         # TODO here is where I have to deal with the iterations
-        print(x.shape)
-        raise NotImplementedError("TODO")
-        # for numstep in range(self.time_steps):
-        # #     y, hebb = net(Variable(inputs[numstep], requires_grad=False), y, hebb)
-        #     pass    # Run the episode!
+        # print(x.shape)
+        # raise NotImplementedError("TODO")
+        embd = self.embeddings(x)
+        #####
+        device  = self.device
+        # first implementation, basic loop through everything
+        out = torch.zeros((x.shape[0], x.shape[1], self.output_size)).to(device)
+        for s in range(x.shape[0]):  # sample
+            for t in range(x.shape[1]):  # time
+                self._x = [embd[s][t]] + [torch.zeros_like(embd[s][t]).to(device)] * len(self.hebbian_layers)
+                self._y = [torch.zeros_like(self._x[0]).to(device)] * len(self.hebbian_layers)
+                for i_hb in range(len(self.hebbian_layers)):
+                    hb = self.hebbian_layers[i_hb]
+                    y, hebb = hb(self._x[i_hb], self._y[i_hb], self._hebb[i_hb])
+                    self._x[i_hb + 1] = y
+                    self._y[i_hb] = y
+                    self._hebb[i_hb] = hebb
+                #sigmoid of the last hebbian layer
+                o = self.sig(self._x[-1])
+                out[s][t] = self.softmax(o)
+        return out
+        #####
+        # test n# 2
+        # self._x = [embd] + [torch.zeros_like(embd).to(device)] * len(self.hebbian_layers)
+        # self._y = [torch.zeros_like(self._x[0]).to(device)] * len(self.hebbian_layers)
+        # for i_hb in range(len(self.hebbian_layers)):
+        #     hb = self.hebbian_layers[i_hb]
+        #     y, hebb = hb(self._x[i_hb], self._y[i_hb], self._hebb[i_hb])
+        #     self._x[i_hb + 1] = y
+        #     self._y[i_hb] = y
+        #     self._hebb[i_hb] = hebb
+        # #sigmoid of the last hebbian layer
+        # out = self.softmax(self.sig(self._x[-1]))
+        return out
 
 
 class PlasticFCBaseline(PyTorchModel):
@@ -128,6 +160,6 @@ class PlasticFCBaseline(PyTorchModel):
         self._num_channels = [self._embd_size] + [self._hidden_size] * self._n_layers
 
         self.model = PlasticFCNetwork(in_size=self._input_size, out_size=self._input_size, time_steps=self._time_steps,
-                                      num_channels=self._num_channels, plasticity=self._rule)
+                                      num_channels=self._num_channels, plasticity=self._rule, device=self.device)
 
         self.model.to(self.device)

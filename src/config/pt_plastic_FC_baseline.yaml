@@ -16,5 +16,5 @@ max_grad_norm: !!int 5
 batch_size: !!int 5
 embedding_size: !!int 250
 n_layers: !!int 2
-hidden_size: !!int 200
+hidden_size: !!int 250
 
